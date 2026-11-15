@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#2A2152">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Piano da Maya">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Piano da Maya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: slim header, scrolling lesson area, and the rainbow keyboard docked on a dark stage at the bottom, always under the fingers */
+  color-scheme: light;
+  --sky:#ECEFFF; --paper:#FFFFFF; --ink:#2A2152; --ink-soft:#625B8A; --line:#D5D9F5; --sun:#FFD23F;
+  --do:#EF3E36; --re:#F7892B; --mi:#F7C61C; --fa:#3FB950; --sol:#1FA9D6; --la:#7557E0; --si:#EC5BA9;
+  --display:'Baloo 2','Trebuchet MS','Segoe UI',sans-serif;
+  --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --kh:clamp(140px,36vh,280px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--sky);color:var(--ink);font:500 17px/1.5 var(--body);overflow:hidden;touch-action:pan-y;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+a,button{-webkit-user-drag:none;-webkit-tap-highlight-color:transparent}
+.prose{user-select:text;-webkit-user-select:text}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,6vw,44px);font-weight:800}
+h2{font-size:24px;font-weight:800}
+h3{font-size:19px;font-weight:700}
+p{margin:0}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--la);outline-offset:3px}
+
+/* header */
+header{flex:none;position:relative;display:flex;align-items:center;gap:12px;padding:8px 16px 13px;background:var(--paper)}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,var(--do) 0 14.28%,var(--re) 0 28.57%,var(--mi) 0 42.85%,var(--fa) 0 57.14%,var(--sol) 0 71.42%,var(--la) 0 85.71%,var(--si) 0)}
+.brand{font:800 21px var(--display);text-decoration:none;white-space:nowrap}
+header nav{margin-left:auto;display:flex;gap:2px}
+header nav a{padding:6px 12px;border-radius:999px;font:700 15px var(--display);color:var(--ink-soft);text-decoration:none}
+header nav a.on{background:var(--ink);color:#fff}
+@media (max-width:440px){.brand{display:none}header nav{margin:0 auto}}
+
+/* main */
+main{flex:1;min-height:0;overflow-y:auto;padding:18px 16px 24px;-webkit-overflow-scrolling:touch}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.lead{max-width:62ch;color:var(--ink-soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:18px;padding:12px 14px;text-decoration:none;box-shadow:0 3px 0 var(--line);min-height:76px}
+.card:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.card .t{font:700 19px/1.15 var(--display)}
+.card .s{font-size:14px;color:var(--ink-soft);line-height:1.3}
+.card .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.num{flex:none;width:46px;height:46px;border-radius:50%;background:#fff;border:6px solid var(--c);display:grid;place-items:center;font:800 21px var(--display)}
+.big-e{flex:none;font-size:34px;line-height:1;width:46px;text-align:center}
+.stars{flex:none;font-size:15px;letter-spacing:1px;color:var(--line);white-space:nowrap}
+.stars b{color:#F0B400;font-weight:400}
+.mini{display:flex;gap:3px;margin-top:4px}
+.mini i{width:11px;height:11px;border-radius:50%;background:var(--c)}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec h2{display:flex;align-items:center;gap:10px}
+.sec h2::before{content:"";width:14px;height:28px;border-radius:7px;background:var(--c)}
+.tally{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;background:var(--paper);border-radius:999px;padding:6px 16px;font:700 16px var(--display)}
+.tally b{color:#F0B400;font-size:20px}
+
+/* lesson */
+.back{align-self:flex-start;font:700 15px var(--display);color:var(--ink-soft);text-decoration:none;padding:4px 0}
+.ltitle{display:flex;align-items:center;gap:12px}
+.ltitle h1{font-size:clamp(26px,5.4vw,38px)}
+.stepdots{display:flex;gap:8px}
+.sd{width:40px;height:40px;border-radius:50%;border:3px solid var(--line);background:var(--paper);font:800 17px var(--display);color:var(--ink-soft);cursor:pointer}
+.sd.done{border-color:#F0B400;color:var(--ink)}
+.sd.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.say{background:var(--paper);border-radius:18px;padding:14px 16px;border-left:8px solid var(--sun);display:flex;flex-direction:column;gap:6px}
+.eyebrow{font:800 12px var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+.script{font:600 20px/1.35 var(--display);max-width:60ch}
+.tip{font-size:15px;color:var(--ink-soft);max-width:65ch}
+.act{display:flex;flex-direction:column;align-items:center;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+.row.end{justify-content:space-between}
+.btn{font:800 18px var(--display);padding:10px 22px;min-height:52px;border-radius:999px;border:0;background:var(--ink);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn.sun{background:var(--sun);color:var(--ink);box-shadow:0 4px 0 #D9A900}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+.btn:active{transform:translateY(2px)}
+.btn[disabled]{opacity:.35;cursor:default}
+.btn.pulse{animation:pulse .9s ease-in-out infinite alternate}
+.animal{width:clamp(104px,26vh,170px);aspect-ratio:1;border:0;border-radius:28px;background:var(--paper);box-shadow:0 6px 0 var(--line);font:800 17px var(--display);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.animal .ae{font-size:clamp(44px,12vh,72px);line-height:1}
+.animal:active{transform:translateY(3px);box-shadow:0 3px 0 var(--line)}
+.animal.hop .ae{animation:hop1 .28s ease-out}
+.count{font-size:30px;letter-spacing:5px;color:var(--line);line-height:1}
+.count b{color:#F0B400;font-weight:400}
+.bigcard{display:flex;align-items:center;gap:14px;background:var(--paper);border-radius:24px;padding:10px 26px 10px 14px;border:8px solid var(--c);font:800 40px var(--display)}
+.bigcard .be{font-size:56px;line-height:1}
+
+/* guide */
+.prose{display:flex;flex-direction:column;gap:22px}
+.prose section{background:var(--paper);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.prose p,.prose li{max-width:66ch}
+.prose ul,.prose ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:15px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:800 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+td:first-child{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:800}
+.legend{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--ink);border-radius:999px;padding:1px 12px 1px 5px;font:800 16px var(--display);white-space:nowrap;vertical-align:middle}
+.chip i{width:18px;height:18px;border-radius:50%;background:var(--c)}
+.legend .chip{box-shadow:inset 0 0 0 2px var(--line)}
+kbd{font:800 14px var(--display);background:var(--sky);border-radius:6px;padding:1px 7px}
+
+/* dock + keyboard */
+.dock{touch-action:none;flex:none;background:var(--ink);border-radius:20px 20px 0 0;padding:6px 8px 10px}
+.dock[hidden]{display:none}
+.strip{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 6px 6px;color:#fff}
+.prompt{flex:none;max-width:62%;font:700 17px/1.2 var(--display)}
+.dots{flex:1;min-width:0;display:flex;align-items:center;gap:5px;overflow-x:auto;padding:5px 3px;scrollbar-width:none}
+.dots::-webkit-scrollbar{display:none}
+.dot{flex:none;width:24px;height:24px;border-radius:12px;background:var(--c)}
+.dot.l{width:42px}.dot.xl{width:60px}.dot.s{width:16px;height:16px}
+.dot.past{opacity:.3}
+.dot.cur{box-shadow:0 0 0 3px #fff;transform:scale(1.12)}
+.keys{position:relative;display:flex;height:var(--kh);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.wk{flex:1;min-width:0;margin:0 2px;padding:0 0 12px;border:0;border-radius:0 0 14px 14px;background:var(--c);box-shadow:inset 0 -12px 0 rgba(0,0,0,.14),inset 0 5px 0 rgba(255,255,255,.28);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
+.wk .em{font-size:clamp(18px,5vw,36px);line-height:1;pointer-events:none}
+.wk .nm{font:800 clamp(12px,3.3vw,19px)/1.3 var(--display);background:#fff;color:var(--ink);border-radius:999px;padding:0 .5em;pointer-events:none}
+.wk.hi .em{font-size:clamp(14px,3.8vw,26px)}
+.dock{--n:8}
+.dock.wide{--n:10}
+.dock:not(.wide) .x{display:none}
+.bk{position:absolute;top:0;width:calc(64% / var(--n));height:56%;transform:translateX(-50%);z-index:2;border:0;border-radius:0 0 9px 9px;background:#120C2E;box-shadow:inset 0 -9px 0 rgba(255,255,255,.14),0 3px 0 rgba(0,0,0,.35);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
+.keys.guiding .wk:not(.target){opacity:.32}
+.keys.guiding .bk:not(.target){background:#3A3263;box-shadow:none}
+.wk.target::before{content:"★";position:absolute;top:8%;left:0;right:0;text-align:center;font-size:clamp(24px,6.5vw,46px);line-height:1;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.22);animation:hop .6s ease-in-out infinite alternate;pointer-events:none}
+.bk.target{box-shadow:0 0 0 4px var(--sun),0 0 22px 4px var(--sun)}
+.bk.target::before{content:"★";position:absolute;bottom:12%;left:0;right:0;text-align:center;font-size:clamp(14px,4vw,26px);color:var(--sun);animation:hop .6s ease-in-out infinite alternate;pointer-events:none}
+.wk.down{transform:translateY(5px);box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)}
+.bk.down{transform:translateX(-50%) translateY(4px)}
+.wk.demo,.bk.demo{opacity:1!important;box-shadow:0 0 0 4px #fff,0 0 26px 6px #fff;z-index:3}
+.wk.nope{animation:shake .28s}
+.shake{animation:shake .28s}
+.bk.shake{animation:shakeb .28s}
+@keyframes shakeb{25%{transform:translateX(calc(-50% - 4px))}75%{transform:translateX(calc(-50% + 4px))}}
+@media (max-height:440px){:root{--kh:128px}header{padding:4px 16px 9px}main{padding-top:10px}.strip{min-height:36px}}
+
+/* falling notes (songs) */
+.roll{position:relative;height:clamp(110px,26vh,300px);overflow:hidden;border-radius:12px 12px 0 0;border-bottom:4px solid var(--sun);
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 calc(100% / var(--n) - 1px),rgba(255,255,255,.16) calc(100% / var(--n) - 1px) calc(100% / var(--n)))}
+.roll[hidden],.dots[hidden]{display:none}
+.track{position:absolute;left:0;right:0;bottom:0;height:0;will-change:transform}
+.bar{position:absolute;width:calc(100% / var(--n) - 4px);background:var(--c);border-radius:10px;display:flex;align-items:flex-end;justify-content:center;box-shadow:inset 0 4px 0 rgba(255,255,255,.32),inset 0 -4px 0 rgba(0,0,0,.16)}
+.bar.blk{width:calc(64% / var(--n));background:#120C2E;box-shadow:0 0 0 3px var(--sun);z-index:1}
+.bar.blk span{color:var(--sun)}
+.bar span{font-size:clamp(14px,3.6vw,26px);line-height:1;padding-bottom:4px}
+.ctl{margin-left:auto;flex:none;display:flex;gap:6px}
+.ctl:empty{display:none}
+.cbtn{min-width:44px;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(255,255,255,.16);color:#fff;font:800 16px var(--display);cursor:pointer}
+.cbtn.sun{background:var(--sun);color:var(--ink)}
+.cbtn[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.dock.rolling{--kh:clamp(128px,30vh,260px)}
+.dock.rolling .prompt{max-width:none;flex:1;min-width:0}
+
+/* celebration */
+#toast{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;z-index:20;background:var(--paper);color:var(--ink);font:800 clamp(26px,7vw,44px) var(--display);padding:10px 30px;border-radius:999px;border:6px solid var(--sun);white-space:nowrap;transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .2s}
+#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:19}
+
+@keyframes hop{from{transform:translateY(0)}to{transform:translateY(22%)}}
+@keyframes hop1{0%{transform:translateY(0)}40%{transform:translateY(-22%)}100%{transform:translateY(0)}}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.07)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="#aulas">Piano da Maya</a>
+  <nav aria-label="Seções">
+    <a href="#aulas" data-tab="aulas">Aulas</a>
+    <a href="#musicas" data-tab="musicas">Músicas</a>
+    <a href="#jogos" data-tab="jogos">Jogos</a>
+    <a href="#guia" data-tab="guia">Guia</a>
+  </nav>
+</header>
+
+<main id="main"><div class="wrap" id="view"></div></main>
+
+<div class="dock" id="dock">
+  <div class="strip">
+    <div class="prompt" id="prompt" aria-live="polite"></div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <div class="ctl" id="ctl"></div>
+  </div>
+  <div class="roll" id="roll" hidden aria-hidden="true"><div class="track" id="track"></div></div>
+  <div class="keys" id="keys"></div>
+</div>
+
+<div id="toast" role="status"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<template id="guia-tpl">
+  <h1>Guia para quem ensina</h1>
+  <p class="lead">Cinco minutos de leitura antes da primeira aula. O resto do curso é para fazer junto com a Maya, com ela no colo ou ao lado.</p>
+  <div class="prose">
+    <section>
+      <h2>O que esperar aos 3 anos</h2>
+      <p>Nesta idade, aprender piano é brincar com som. O objetivo do curso é que a Maya goste do instrumento, reconheça grave e agudo, encontre as teclas pelo desenho e pela cor e toque melodias curtas com um dedo.</p>
+      <ul>
+        <li>Um dedo só (o indicador) está ótimo. Dedos independentes e posição de mão costumam vir entre 4 e 5 anos.</li>
+        <li>Ela não precisa ler nada. As cores e os desenhos fazem o papel da partitura.</li>
+        <li>Repetir a mesma aula por duas ou três semanas é normal e desejável.</li>
+        <li>Terminar o curso tocando duas ou três músicas com ajuda das cores é um ótimo resultado.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Como dar cada aula</h2>
+      <ol>
+        <li><strong>1 minuto de toque livre.</strong> Deixe ela apertar o que quiser.</li>
+        <li><strong>5 minutos de aula.</strong> Leia em voz alta a frase amarela e siga os passos. Mostre primeiro, toquem juntos, depois ela sozinha.</li>
+        <li><strong>2 minutos de algo que ela já sabe.</strong> Uma música antiga ou um jogo.</li>
+        <li><strong>Aplausos.</strong> Sempre termine com uma vitória, mesmo pequena.</li>
+      </ol>
+      <p>Três ou quatro sessões curtas por semana rendem mais que uma longa. Pare antes de ela cansar: é melhor ela pedir mais do que querer sair.</p>
+      <p>Cante o nome das notas enquanto ela toca (“Mi, Ré, Dó”). Cantar é o que fixa a melodia nessa idade.</p>
+    </section>
+    <section>
+      <h2>As cores e os amigos das notas</h2>
+      <div class="legend" id="legend"></div>
+      <p>Cada nota tem uma cor e um desenho cujo nome começa com o som da nota. Use sempre as mesmas palavras: “o Dó do doce”, “o Mi do milho”.</p>
+    </section>
+    <section>
+      <h2>Plano de 10 semanas</h2>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Semana</th><th>Aula</th><th>Pode avançar quando ela…</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Olá, piano!</td><td>aperta uma tecla de cada vez, sem bater com a mão toda</td></tr>
+            <tr><td>2</td><td>Elefante e passarinho</td><td>acerta grave ou agudo na maioria das vezes</td></tr>
+            <tr><td>3</td><td>As teclas pretas</td><td>aponta as gêmeas e as trigêmeas sem a estrela</td></tr>
+            <tr><td>4</td><td>A casa do Dó</td><td>encontra o Dó sozinha</td></tr>
+            <tr><td>5</td><td>Tartaruga e coelho</td><td>muda de devagar para rápido junto com o bicho</td></tr>
+            <tr><td>6</td><td>Dó, Ré, Mi</td><td>toca Dó, Ré, Mi subindo e descendo</td></tr>
+            <tr><td>7</td><td>Pão quentinho</td><td>toca a música seguindo as estrelas</td></tr>
+            <tr><td>8</td><td>Fá e Sol</td><td>sobe e desce as cinco notas</td></tr>
+            <tr><td>9</td><td>Lá e a estrelinha</td><td>toca o começo da estrelinha</td></tr>
+            <tr><td>10</td><td>O concerto da Maya</td><td>escolhe e toca uma música para a família</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>O ritmo é dela. Se uma aula levar um mês, o plano continua certo.</p>
+    </section>
+    <section>
+      <h2>Do tablet para um piano de verdade</h2>
+      <ul>
+        <li>Cole adesivos redondos com as mesmas cores nas teclas do Dó central até o Dó seguinte. Tudo o que ela aprendeu aqui passa a valer lá.</li>
+        <li>Use um banquinho firme e um apoio para os pés, para ela não ficar pendurada.</li>
+        <li>No teclado real ela descobre o forte e o suave, que a tela não tem. Brinquem de “tocar como formiga” e “tocar como leão”.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Se ela não quiser hoje</h2>
+      <ul>
+        <li>Toque você e deixe ela só ouvir ou dançar. Conta como aula.</li>
+        <li>Troque a aula por um jogo. O Eco e o Quem cantou? treinam o ouvido do mesmo jeito.</li>
+        <li>Não corrija a tecla errada. A estrela continua pulando na certa e ela acha sozinha.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Dicas técnicas</h2>
+      <ul>
+        <li>Use o tablet ou celular deitado, apoiado na mesa. As teclas ficam maiores.</li>
+        <li>Sem som no iPhone ou iPad? Desligue o modo silencioso e aumente o volume.</li>
+        <li>No computador, as teclas <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> tocam de Dó a Dó.</li>
+        <li>As estrelas ficam guardadas só neste aparelho e navegador.</li>
+      </ul>
+    </section>
+  </div>
+</template>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const k of kids.flat()) {
+    if (k == null || k === false) continue;
+    e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  }
+  return e;
+}
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+/* ---------- notes ---------- */
+const N = {
+  C: { m: 60, n: 'Dó', c: 'var(--do)', e: '🍭', w: 'doce' },
+  D: { m: 62, n: 'Ré', c: 'var(--re)', e: '👑', w: 'rei' },
+  E: { m: 64, n: 'Mi', c: 'var(--mi)', e: '🌽', w: 'milho' },
+  F: { m: 65, n: 'Fá', c: 'var(--fa)', e: '🧚', w: 'fada' },
+  G: { m: 67, n: 'Sol', c: 'var(--sol)', e: '☀️', w: 'sol' },
+  A: { m: 69, n: 'Lá', c: 'var(--la)', e: '✏️', w: 'lápis' },
+  B: { m: 71, n: 'Si', c: 'var(--si)', e: '🔔', w: 'sino' },
+  c: { m: 72, n: 'Dó', c: 'var(--do)', e: '🍭', w: 'doce', hi: true },
+  d: { m: 74, n: 'Ré', c: 'var(--re)', e: '👑', w: 'rei', hi: true },
+  e: { m: 76, n: 'Mi', c: 'var(--mi)', e: '🌽', w: 'milho', hi: true },
+  'c#': { m: 73, black: true }, 'd#': { m: 75, black: true },
+  'C#': { m: 61, black: true }, 'D#': { m: 63, black: true },
+  'F#': { m: 66, black: true }, 'G#': { m: 68, black: true }, 'A#': { m: 70, black: true }
+};
+const WHITE = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'c', 'd', 'e'];
+const EXTRA = ['d', 'e', 'c#', 'd#']; /* shown only for songs that need the wider keyboard */
+const BLACK = [['C#', 1], ['D#', 2], ['F#', 4], ['G#', 5], ['A#', 6], ['c#', 8], ['d#', 9]];
+for (const k in N) if (N[k].black) Object.assign(N[k], { n: 'Tecla preta', c: '#120C2E', e: '★' });
+const BPOS = Object.fromEntries(BLACK);
+const PCKEYS = { a: 'C', s: 'D', d: 'E', f: 'F', g: 'G', h: 'A', j: 'B', k: 'c', l: 'd', ';': 'e', o: 'c#', p: 'd#', w: 'C#', e: 'D#', t: 'F#', y: 'G#', u: 'A#' };
+const chip = id => `<span class="chip" style="--c:${N[id].c}"><i></i>${N[id].e} ${N[id].n}${N[id].hi ? ' agudo' : ''}</span>`;
+
+/* melody text: note letters; length marks: "." half, "+" one and a half, "-" double, "~" triple, "--" quadruple */
+function parse(txt) {
+  return txt.split(/\s+/).filter(t => t && t !== '|').map(t => {
+    const mm = /^([A-G]#?|[cde]#?)(--|-|~|\+|\.)?$/.exec(t);
+    if (!mm || !N[mm[1]]) throw new Error('nota inválida: ' + t);
+    return { id: mm[1], d: { '--': 4, '~': 3, '-': 2, '+': 1.5, '.': 0.5 }[mm[2]] || 1 };
+  });
+}
+
+/* ---------- sound ---------- */
+let ctx = null, master = null, pending = null;
+function audio() {
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try {
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0.85;
+      const comp = ctx.createDynamicsCompressor();
+      master.connect(comp); comp.connect(ctx.destination);
+    } catch (e) { ctx = null; return null; }
+  }
+  return ctx;
+}
+function unlock() {
+  const c = audio(); if (!c) return;
+  const go = () => { if (pending) { const p = pending; pending = null; p(); } };
+  if (c.state === 'running') go();
+  else { try { c.resume().then(go).catch(() => {}); } catch (e) {} }
+}
+['pointerup', 'touchend', 'click', 'keydown'].forEach(t => window.addEventListener(t, unlock, { capture: true, passive: true }));
+
+function tone(midi, o) {
+  o = o || {};
+  const c = audio(); if (!c) return;
+  if (c.state !== 'running') {
+    try { c.resume().catch(() => {}); } catch (e) {}
+    pending = () => tone(midi, o);
+    return;
+  }
+  const type = o.type || 'piano', t = c.currentTime + 0.005, f = 440 * Math.pow(2, (midi - 69) / 12);
+  const g = c.createGain(); g.connect(master);
+  const voice = (freq, wave, gain, stop, dest) => {
+    const os = c.createOscillator(), og = c.createGain();
+    os.type = wave; os.frequency.setValueAtTime(freq, t); og.gain.value = gain;
+    os.connect(og); og.connect(dest); os.start(t); os.stop(t + stop + 0.05);
+    return os;
+  };
+  if (type === 'piano') {
+    const dur = o.dur || 1.5, vol = 0.5;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(Math.min(f * 7, 9000), t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(f * 2, 700), t + dur);
+    lp.connect(g);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(vol * 0.4, t + 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    voice(f, 'triangle', 1, dur, lp); voice(f * 2, 'sine', 0.35, dur, lp); voice(f * 3, 'sine', 0.1, dur, lp);
+  } else if (type === 'tuba') {
+    const dur = 0.55;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.connect(g);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.7, t + 0.05);
+    g.gain.setValueAtTime(0.7, t + dur - 0.15);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    voice(f, 'sawtooth', 1, dur, lp); voice(f * 2, 'sine', 0.5, dur, lp);
+  } else if (type === 'bird') {
+    const dur = 0.13;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.3, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const os = voice(f, 'sine', 1, dur, g);
+    os.frequency.exponentialRampToValueAtTime(f * 1.25, t + dur);
+  } else { /* click */
+    g.gain.setValueAtTime(0.35, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    voice(f, 'square', 1, 0.07, g);
+  }
+}
+const sndLow = () => { [[36, 0], [38, 480], [36, 960]].forEach(([m, ms]) => later(() => tone(m, { type: 'tuba' }), ms)); };
+const sndHigh = () => { [[96, 0], [100, 150], [103, 300], [100, 450], [103, 600]].forEach(([m, ms]) => later(() => tone(m, { type: 'bird' }), ms)); };
+const sndCheer = () => { [72, 76, 79, 84].forEach((m, i) => setTimeout(() => tone(m, { dur: 0.9 }), i * 110)); };
+
+/* ---------- keyboard ---------- */
+const keyEls = {};
+const keysBox = $('#keys'), promptEl = $('#prompt'), dotsEl = $('#dots');
+const rollEl = $('#roll'), trackEl = $('#track'), ctlEl = $('#ctl');
+const FREE = 'Toque livre: aperte qualquer tecla';
+function buildKeys() {
+  WHITE.forEach(id => {
+    const n = N[id];
+    keyEls[id] = el('button', { class: 'wk' + (n.hi ? ' hi' : '') + (EXTRA.includes(id) ? ' x' : ''), type: 'button', 'data-k': id, 'aria-label': n.n + (n.hi ? ' agudo' : ''), style: `--c:${n.c}` },
+      el('span', { class: 'em', 'aria-hidden': 'true' }, n.e), el('span', { class: 'nm' }, n.n));
+    keysBox.append(keyEls[id]);
+  });
+  BLACK.forEach(([id, pos]) => {
+    keyEls[id] = el('button', { class: 'bk' + (EXTRA.includes(id) ? ' x' : ''), type: 'button', 'data-k': id, 'aria-label': 'Tecla preta', style: `left:calc(${pos} * 100% / var(--n))` });
+    keysBox.append(keyEls[id]);
+  });
+  keysBox.addEventListener('pointerdown', e => {
+    const b = e.target.closest('[data-k]'); if (!b) return;
+    e.preventDefault(); press(b.dataset.k, true);
+  });
+  /* resting fingers: a held touch must never open a menu, start a zoom or drag a link */
+  ['contextmenu', 'gesturestart', 'gesturechange', 'dragstart', 'selectstart'].forEach(t =>
+    document.addEventListener(t, e => { if (!(t === 'selectstart' && e.target.closest && e.target.closest('.prose'))) e.preventDefault(); }));
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  window.addEventListener('keydown', e => {
+    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    const id = PCKEYS[e.key.toLowerCase()];
+    if (id && !$('#dock').hidden) press(id, true);
+  });
+}
+function press(id, user) {
+  tone(N[id].m);
+  const b = keyEls[id];
+  b.classList.add('down'); setTimeout(() => b.classList.remove('down'), 150);
+  if (user && act && act.onKey) act.onKey(id);
+}
+function setTargets(ids) {
+  for (const k in keyEls) keyEls[k].classList.remove('target');
+  (ids || []).forEach(id => keyEls[id].classList.add('target'));
+  keysBox.classList.toggle('guiding', !!(ids && ids.length));
+}
+function flash(id, ms) { const b = keyEls[id]; b.classList.add('demo'); setTimeout(() => b.classList.remove('demo'), ms || 320); }
+function nope(node) { node.classList.remove('nope', 'shake'); void node.offsetWidth; node.classList.add(node.classList.contains('wk') ? 'nope' : 'shake'); }
+function setPrompt(html) { promptEl.innerHTML = html; }
+function setDots(notes, idx) {
+  dotsEl.replaceChildren();
+  if (!notes) return;
+  let cur = null;
+  notes.forEach((n, j) => {
+    const d = el('i', { class: 'dot' + (n.d >= 4 ? ' xl' : n.d >= 2 ? ' l' : n.d < 1 ? ' s' : '') + (j < idx ? ' past' : '') + (j === idx ? ' cur' : ''), style: `--c:${N[n.id].c}` });
+    if (j === idx) cur = d;
+    dotsEl.append(d);
+  });
+  if (cur) dotsEl.scrollLeft = cur.offsetLeft - dotsEl.clientWidth / 2;
+}
+function renderCount(node, n, total) {
+  node.replaceChildren();
+  for (let i = 0; i < total; i++) node.append(i < n ? el('b', {}, '★') : '★');
+}
+
+/* ---------- activities ---------- */
+let act = null, gen = 0, timers = [];
+function later(fn, ms) { const g = gen; timers.push(setTimeout(() => { if (g === gen) fn(); }, ms)); }
+function stopAct() {
+  gen++; timers.forEach(clearTimeout); timers = []; act = null;
+  setTargets([]); setDots(null); setPrompt(FREE);
+  rollEl.hidden = true; trackEl.replaceChildren(); ctlEl.replaceChildren(); dotsEl.hidden = false;
+  $('#dock').classList.remove('rolling', 'wide');
+}
+window.addEventListener('resize', () => { if (act && act.layout) act.layout(); });
+function startAct(spec, host, done) {
+  stopAct(); host.replaceChildren();
+  let fired = false;
+  ACTS[spec.t](spec, host, () => { if (fired) return; fired = true; done(); });
+}
+const BEAT = 470;
+
+const ACTS = {
+  free(spec, host, done) {
+    let n = 0; const stars = el('div', { class: 'count' }); host.append(stars);
+    renderCount(stars, 0, spec.goal); setPrompt('Toque onde quiser');
+    act = { onKey() { n++; renderCount(stars, Math.min(n, spec.goal), spec.goal); if (n === spec.goal) done(); } };
+  },
+
+  seq(spec, host, done) {
+    const notes = parse(spec.notes);
+    let i = 0, dg = 0, playing = false;
+    const show = () => {
+      setDots(notes, i);
+      if (i < notes.length) { setTargets([notes[i].id]); setPrompt('Toque ' + chip(notes[i].id)); }
+      else { setTargets([]); setPrompt('Conseguiu!'); }
+    };
+    const reset = () => { dg++; playing = false; i = 0; show(); };
+    const demo = () => {
+      const d = ++dg; playing = true; setTargets([]); setPrompt('Escute…');
+      let t = 0;
+      notes.forEach((n, j) => {
+        later(() => { if (d !== dg) return; tone(N[n.id].m); flash(n.id, Math.max(160, n.d * BEAT * 0.7)); setDots(notes, j); }, t);
+        t += n.d * BEAT;
+      });
+      later(() => { if (d !== dg) return; playing = false; i = 0; show(); }, t + 250);
+    };
+    host.append(el('div', { class: 'row' },
+      el('button', { class: 'btn sun', type: 'button', onclick: demo }, '▶ Ouvir primeiro'),
+      el('button', { class: 'btn ghost', type: 'button', onclick: reset }, '↺ Recomeçar')));
+    act = {
+      onKey(id) {
+        if (playing || i >= notes.length) return;
+        if (id === notes[i].id) { i++; show(); if (i === notes.length) done(); }
+        else nope(keyEls[id]);
+      }
+    };
+    show();
+  },
+
+  /* falling notes: each bar drops down its key's column; in play mode the song waits for the right key */
+  roll(spec, host, done) {
+    const notes = parse(spec.notes), myGen = gen;
+    let total = 0; notes.forEach(n => { n.b = total; total += n.d; });
+    rollEl.hidden = false; dotsEl.hidden = true; $('#dock').classList.add('rolling');
+    $('#dock').classList.toggle('wide', notes.some(n => EXTRA.includes(n.id)));
+    let ppb = 1, pos = -3, i = 0, mode = 'wait', lg = 0, slow = false;
+    const bars = notes.map(n => {
+      const blk = N[n.id].black;
+      const b = el('div', { class: 'bar' + (blk ? ' blk' : ''), style: blk ? `left:calc(${BPOS[n.id] - 0.32} * 100% / var(--n))` : `--c:${N[n.id].c};left:calc(${WHITE.indexOf(n.id)} * 100% / var(--n) + 2px)` }, n.d >= 1 && el('span', {}, N[n.id].e));
+      trackEl.append(b); return b;
+    });
+    const place = ms => {
+      trackEl.style.transition = ms ? `transform ${ms}ms ease-out` : 'none';
+      trackEl.style.transform = `translateY(${pos * ppb}px)`;
+    };
+    const layout = () => {
+      ppb = rollEl.clientHeight / 4.5;
+      bars.forEach((b, j) => { b.style.bottom = notes[j].b * ppb + 'px'; b.style.height = Math.max(10, notes[j].d * ppb - 5) + 'px'; });
+      place(0);
+    };
+    const showWait = ms => {
+      if (i < notes.length) { pos = notes[i].b; setTargets([notes[i].id]); setPrompt('Toque ' + chip(notes[i].id)); }
+      else { pos = total; setTargets([]); setPrompt('Conseguiu!'); }
+      place(ms || 260);
+    };
+    const restart = () => {
+      lg++; mode = 'wait'; i = 0; pos = -3; place(0); void trackEl.offsetWidth;
+      later(() => showWait(750), 40);
+    };
+    const listen = () => {
+      const g = ++lg, beat = slow ? 780 : BEAT; mode = 'listen';
+      setTargets([]); setPrompt('Escute e veja…');
+      const t0 = performance.now() + 3 * beat; let next = 0;
+      const frame = now => {
+        if (g !== lg || myGen !== gen) return;
+        pos = (now - t0) / beat; place(0);
+        while (next < notes.length && notes[next].b <= pos) {
+          const n = notes[next++]; tone(N[n.id].m); flash(n.id, Math.max(160, n.d * beat * 0.7));
+        }
+        if (pos < total + 0.4) requestAnimationFrame(frame); else later(restart, 300);
+      };
+      requestAnimationFrame(frame);
+    };
+    const bSlow = el('button', { class: 'cbtn', type: 'button', 'aria-label': 'Ouvir devagar', 'aria-pressed': 'false', onclick() { slow = !slow; bSlow.setAttribute('aria-pressed', String(slow)); if (mode === 'listen') listen(); } }, '🐢');
+    ctlEl.append(
+      el('button', { class: 'cbtn sun', type: 'button', onclick: listen }, '▶ Ouvir'),
+      bSlow,
+      el('button', { class: 'cbtn', type: 'button', 'aria-label': 'Recomeçar', onclick: restart }, '↺'));
+    act = {
+      layout,
+      onKey(id) {
+        if (mode !== 'wait' || i >= notes.length) return;
+        if (id === notes[i].id) { i++; showWait(); if (i === notes.length) done(); }
+        else nope(keyEls[id]);
+      }
+    };
+    layout(); restart();
+  },
+
+  find(spec, host, done) {
+    let r = 0, h = 0, miss = 0;
+    const stars = el('div', { class: 'count' }); host.append(stars);
+    const show = () => {
+      const R = spec.rounds[r];
+      setPrompt(R.label);
+      setTargets(R.hint !== false || miss >= 2 ? R.keys : []);
+      renderCount(stars, h, R.hits);
+    };
+    act = {
+      onKey(id) {
+        const R = spec.rounds[r];
+        if (!R) return;
+        if (R.keys.includes(id)) {
+          h++; miss = 0;
+          if (h >= R.hits) {
+            renderCount(stars, R.hits, R.hits);
+            r++; h = 0;
+            if (r >= spec.rounds.length) { setTargets([]); done(); return; }
+            setTargets([]); later(show, 500); return;
+          }
+        } else { miss++; nope(keyEls[id]); }
+        show();
+      }
+    };
+    show();
+  },
+
+  hunt(spec, host, done) {
+    let r = 0, miss = 0, cur = null;
+    const card = el('div', { class: 'bigcard' }), stars = el('div', { class: 'count' });
+    host.append(card, stars);
+    const show = () => {
+      const n = N[cur];
+      card.style.setProperty('--c', n.c);
+      card.replaceChildren(el('span', { class: 'be' }, n.e), n.n);
+      setPrompt('Onde está o ' + chip(cur) + '?');
+      setTargets(miss >= 2 ? [cur] : []);
+      renderCount(stars, r, spec.rounds);
+    };
+    const next = () => { let id; do { id = pick(spec.pool); } while (spec.pool.length > 1 && id === cur); cur = id; miss = 0; show(); };
+    act = {
+      onKey(id) {
+        if (id === cur || (cur === 'C' && id === 'c')) {
+          r++; renderCount(stars, r, spec.rounds);
+          if (r >= spec.rounds) { setTargets([]); done(); return; }
+          next();
+        } else { miss++; nope(keyEls[id]); show(); }
+      }
+    };
+    next();
+  },
+
+  animals(spec, host, done) {
+    const mk = (e, name) => el('button', { class: 'animal', type: 'button' }, el('span', { class: 'ae', 'aria-hidden': 'true' }, e), name);
+    const bLow = mk('🐘', 'Grave'), bHigh = mk('🐦', 'Agudo');
+    const row = el('div', { class: 'row' }, bLow, bHigh);
+    if (spec.explore) {
+      let a = 0, b = 0;
+      const chk = () => { if (a >= 2 && b >= 2) done(); };
+      bLow.addEventListener('click', () => { sndLow(); a++; chk(); });
+      bHigh.addEventListener('click', () => { sndHigh(); b++; chk(); });
+      host.append(row); setPrompt('Aperte os bichos para ouvir');
+      return;
+    }
+    let r = 0, ans = null, busy = false;
+    const stars = el('div', { class: 'count' });
+    const play = () => { ans === 'low' ? sndLow() : sndHigh(); };
+    const ask = () => { ans = Math.random() < 0.5 ? 'low' : 'high'; busy = false; play(); };
+    const bPlay = el('button', { class: 'btn sun pulse', type: 'button', onclick() { bPlay.classList.remove('pulse'); if (busy) return; if (!ans) ask(); else play(); } }, '🔊 Ouvir o som');
+    const choose = (a, btn) => {
+      if (busy) return;
+      if (!ans) { nope(bPlay); return; }
+      if (a === ans) {
+        r++; renderCount(stars, r, spec.rounds);
+        if (r >= spec.rounds) { done(); return; }
+        ans = null; busy = true; later(ask, 1100);
+      } else { nope(btn); later(play, 450); }
+    };
+    bLow.addEventListener('click', () => choose('low', bLow));
+    bHigh.addEventListener('click', () => choose('high', bHigh));
+    host.append(bPlay, row, stars); renderCount(stars, 0, spec.rounds);
+    setPrompt('Escute… quem cantou?');
+  },
+
+  echo(spec, host, done) {
+    let r = 0, sq = [], i = 0, playing = false, miss = 0;
+    const stars = el('div', { class: 'count' });
+    const asNotes = () => sq.map(id => ({ id, d: 1 }));
+    const show = () => { setDots(asNotes(), i); setTargets(miss >= 2 ? [sq[i]] : []); };
+    const play = () => {
+      playing = true; i = 0; miss = 0; setTargets([]); setPrompt('Escute…'); setDots(asNotes(), -1);
+      sq.forEach((id, j) => later(() => { tone(N[id].m); flash(id, 380); setDots(asNotes(), j); }, 350 + j * 620));
+      later(() => { playing = false; setPrompt('Sua vez!'); show(); }, 350 + sq.length * 620);
+    };
+    const round = () => { sq = []; for (let k = 0; k < spec.lens[r]; k++) sq.push(pick(spec.pool)); play(); };
+    const bPlay = el('button', { class: 'btn sun pulse', type: 'button', onclick() { bPlay.classList.remove('pulse'); if (playing) return; if (!sq.length) round(); else play(); } }, '🔊 Ouvir');
+    host.append(bPlay, stars); renderCount(stars, 0, spec.lens.length);
+    setPrompt('Aperte Ouvir para começar');
+    act = {
+      onKey(id) {
+        if (playing || !sq.length) return;
+        if (id === sq[i]) {
+          i++; miss = 0;
+          if (i >= sq.length) {
+            r++; renderCount(stars, r, spec.lens.length); setTargets([]); setDots(asNotes(), i);
+            if (r >= spec.lens.length) { done(); return; }
+            playing = true; later(round, 1000);
+          } else show();
+        } else { miss++; nope(keyEls[id]); show(); }
+      }
+    };
+  },
+
+  tempo(spec, host, done) {
+    const who = spec.mode === 'slow' ? { e: '🐢', n: 'Tartaruga', ms: 900 } : { e: '🐇', n: 'Coelho', ms: 380 };
+    let taps = 0, running = false, tg = 0;
+    const stars = el('div', { class: 'count' });
+    const b = el('button', { class: 'animal', type: 'button' }, el('span', { class: 'ae', 'aria-hidden': 'true' }, who.e), who.n);
+    b.addEventListener('click', () => {
+      const g = ++tg; running = true;
+      for (let k = 0; k < 16; k++) later(() => {
+        if (g !== tg) return;
+        tone(88, { type: 'click' }); b.classList.remove('hop'); void b.offsetWidth; b.classList.add('hop');
+      }, k * who.ms);
+      later(() => { if (g === tg) running = false; }, 16 * who.ms);
+    });
+    host.append(b, stars); renderCount(stars, 0, spec.goal);
+    setPrompt('Aperte o bicho e toque junto com ele');
+    act = {
+      onKey() {
+        if (!running) return;
+        taps++; renderCount(stars, Math.min(taps, spec.goal), spec.goal);
+        if (taps === spec.goal) { tg++; running = false; done(); }
+      }
+    };
+  }
+};
+
+/* ---------- course content ---------- */
+const TW = 'C#,D#'.split(','), TR = 'F#,G#,A#'.split(',');
+const LESSONS = [
+  { title: 'Olá, piano!', sub: 'Explorar os sons', steps: [
+    { say: 'Maya, este é o piano! Cada tecla canta um som diferente. Toque onde você quiser.', tip: 'Deixe ela explorar sem regra nenhuma. Só mostre como apertar uma tecla de cada vez, com um dedo.', act: { t: 'free', goal: 12 } },
+    { say: 'Vamos subir a escada do arco-íris? Um degrau de cada vez, seguindo a estrela.', tip: 'Segure o dedo indicador dela nas primeiras teclas, depois solte.', act: { t: 'seq', notes: 'C D E F G A B c' } },
+    { say: 'Agora vamos descer a escada bem devagar.', act: { t: 'seq', notes: 'c B A G F E D C' } }
+  ] },
+  { title: 'Elefante e passarinho', sub: 'Sons graves e agudos', steps: [
+    { say: 'O elefante tem a voz grossa: é o som grave. O passarinho tem a voz fininha: é o som agudo. Aperte os bichos para ouvir.', tip: 'Imitem juntos: voz grossa andando pesado, voz fininha batendo asas.', act: { t: 'animals', explore: true } },
+    { say: 'Escute com atenção. Quem cantou, o elefante ou o passarinho?', tip: 'Se ela errar, o som toca de novo. Não diga a resposta, repita a imitação.', act: { t: 'animals', rounds: 5 } },
+    { say: 'No piano, o grave mora deste lado e o agudo mora do outro. Toque o Dó grave e depois o Dó agudo.', act: { t: 'find', rounds: [
+      { keys: ['C'], hits: 3, label: '🐘 Som grave' }, { keys: ['c'], hits: 3, label: '🐦 Som agudo' } ] } }
+  ] },
+  { title: 'As teclas pretas', sub: 'Gêmeas e trigêmeas', steps: [
+    { say: 'Olhe as teclas pretas! Estas duas andam sempre juntas: são as gêmeas. Toque nas gêmeas.', tip: 'Pode usar dois dedos ou um de cada vez.', act: { t: 'find', rounds: [{ keys: TW, hits: 6, label: 'Toque nas gêmeas' }] } },
+    { say: 'E estas andam de três em três: são as trigêmeas. Conte comigo: uma, duas, três!', act: { t: 'find', rounds: [{ keys: TR, hits: 6, label: 'Toque nas trigêmeas' }] } },
+    { say: 'Agora sem a estrela! Onde estão as gêmeas? E as trigêmeas?', tip: 'Depois de dois erros, a estrela aparece para ajudar.', act: { t: 'find', rounds: [
+      { keys: TW, hits: 2, label: 'Onde estão as gêmeas?', hint: false }, { keys: TR, hits: 3, label: 'E as trigêmeas?', hint: false },
+      { keys: TW, hits: 2, label: 'As gêmeas de novo!', hint: false } ] } }
+  ] },
+  { title: 'A casa do Dó', sub: 'Encontrar a primeira nota', steps: [
+    { say: 'O Dó mora encostadinho nas gêmeas, deste lado. Ele é vermelho como um doce. Toque o Dó!', tip: 'Mostre primeiro as gêmeas e deslize o dedo para a tecla branca à esquerda.', act: { t: 'find', rounds: [{ keys: ['C'], hits: 5, label: 'Toque ' + chip('C') }] } },
+    { say: 'Existe outro Dó lá em cima, com a voz mais fina. Toque um Dó, depois o outro.', act: { t: 'seq', notes: 'C c C c C- c-' } },
+    { say: 'Onde mora o Dó? Mostre para mim, sem a estrela.', act: { t: 'find', rounds: [{ keys: ['C', 'c'], hits: 4, label: 'Onde mora o Dó?', hint: false }] } }
+  ] },
+  { title: 'Tartaruga e coelho', sub: 'Devagar e rápido', steps: [
+    { say: 'A tartaruga anda bem devagar. Aperte a tartaruga e toque junto com os passos dela.', tip: 'Qualquer tecla vale. Bata palmas no pulso para ela sentir o tempo.', act: { t: 'tempo', mode: 'slow', goal: 8 } },
+    { say: 'O coelho corre rapidinho! Toque junto com os pulos dele.', act: { t: 'tempo', mode: 'fast', goal: 12 } },
+    { say: 'Agora no Dó: passos longos de tartaruga, depois pulinhos de coelho.', tip: 'As bolinhas compridas são sons longos, as pequenas são sons curtos.', act: { t: 'seq', notes: 'C- C- C- C- C. C. C. C. C. C. C. C. C--' } }
+  ] },
+  { title: 'Dó, Ré, Mi', sub: 'Três amigos vizinhos', steps: [
+    { say: 'O Dó tem dois vizinhos: o Ré do rei e o Mi do milho. Vamos visitar cada um.', act: { t: 'find', rounds: [
+      { keys: ['C'], hits: 2, label: 'Toque ' + chip('C') }, { keys: ['D'], hits: 2, label: 'Toque ' + chip('D') }, { keys: ['E'], hits: 2, label: 'Toque ' + chip('E') } ] } },
+    { say: 'Vamos subir e descer: Dó, Ré, Mi… Mi, Ré, Dó.', tip: 'Cante o nome das notas enquanto ela toca.', act: { t: 'seq', notes: 'C D E- E D C-' } },
+    { say: 'Caça ao tesouro! Eu mostro o desenho e você acha a tecla.', act: { t: 'hunt', pool: ['C', 'D', 'E'], rounds: 6 } }
+  ] },
+  { title: 'Pão quentinho', sub: 'A primeira música', steps: [
+    { say: 'Hoje você vai tocar uma música de verdade! Ela começa assim: Mi, Ré, Dó.', tip: 'Aperte Ouvir primeiro e cantem juntos antes de tocar.', act: { t: 'seq', notes: 'E D C- E D C-' } },
+    { say: 'Agora a música inteira. Siga a estrela!', tip: 'O meio tem notas repetidas e rápidas. Se ficar difícil, toque você essa parte.', act: { t: 'seq', notes: 'E D C- E D C- C. C. C. C. D. D. D. D. E D C-' } },
+    { say: 'Uma música nova com as mesmas três notas: o carneirinho da Maria.', act: { t: 'seq', notes: 'E D C D E E E-' } }
+  ] },
+  { title: 'Fá e Sol', sub: 'Cinco notas seguidas', steps: [
+    { say: 'Chegaram dois amigos novos: o Fá da fada e o Sol do sol.', act: { t: 'find', rounds: [
+      { keys: ['F'], hits: 3, label: 'Toque ' + chip('F') }, { keys: ['G'], hits: 3, label: 'Toque ' + chip('G') } ] } },
+    { say: 'Cinco degraus para subir e cinco para descer.', tip: 'Se ela quiser, experimente um dedo para cada tecla. Sem insistir.', act: { t: 'seq', notes: 'C D E F G- G F E D C-' } },
+    { say: 'Esta música é muito famosa. Chama-se Ode à Alegria.', act: { t: 'seq', notes: 'E E F G G F E D C C D E E D D-' } }
+  ] },
+  { title: 'Lá e a estrelinha', sub: 'A música da estrela', steps: [
+    { say: 'O Lá do lápis mora depois do Sol. Toque o Lá!', act: { t: 'find', rounds: [{ keys: ['A'], hits: 4, label: 'Toque ' + chip('A') }] } },
+    { say: 'Esta você conhece! Brilha, brilha, estrelinha.', tip: 'O pulo do Dó para o Sol é grande. Mostre com o dedo dela antes.', act: { t: 'seq', notes: 'C C G G A A G-' } },
+    { say: 'Agora a estrelinha com a segunda parte.', act: { t: 'seq', notes: 'C C G G A A G- F F E E D D C-' } }
+  ] },
+  { title: 'O concerto da Maya', sub: 'Todas as notas e o show', steps: [
+    { say: 'Faltam só dois amigos: o Si do sino e o Dó agudo.', act: { t: 'find', rounds: [
+      { keys: ['B'], hits: 3, label: 'Toque ' + chip('B') }, { keys: ['c'], hits: 3, label: 'Toque ' + chip('c') } ] } },
+    { say: 'Você já conhece o arco-íris inteiro! Suba e desça a escada toda.', act: { t: 'seq', notes: 'C D E F G A B c- c B A G F E D C-' } },
+    { say: 'Hora do concerto! Toque o carneirinho para a plateia.', tip: 'Chame a família ou os bichos de pelúcia, anuncie a pianista e aplaudam no fim. Depois ela pode escolher outra em Músicas.', act: { t: 'seq', notes: 'E D C D E E E- D D D- E E E- E D C D E E E E D D E D C--' } }
+  ] }
+];
+const SONGS = [
+  { cat: 'primeiras', id: 'pao', title: 'Pão quentinho', sub: '3 notas, duas vezes', notes: 'E D C- E D C- C. C. C. C. D. D. D. D. E D C- E D C- E D C- C. C. C. C. D. D. D. D. E D C-' },
+  { cat: 'primeiras', id: 'carneirinho', title: 'O carneirinho da Maria', sub: '3 notas, depois com o Sol', notes: 'E D C D E E E- D D D- E E E- E D C D E E E E D D E D C-- E D C D E E E- D D D- E G G- E D C D E E E E D D E D C--' },
+  { cat: 'primeiras', id: 'chuva', title: 'Chuva, chuvinha', sub: '3 notas, com pulos', notes: 'G- E- G G E- G G E A G G E- G G E E G G E- G- E- G G E-' },
+  { cat: 'primeiras', id: 'escada', title: 'Escada do arco-íris', sub: 'Todas as notas, depois pulando degraus', notes: 'C D E F G A B c- c B A G F E D C- C E D F E G F A G B A c- c A B G A F G E F D E C-' },
+  { cat: 'primeiras', id: 'estrelinha', title: 'Brilha, brilha, estrelinha', sub: '6 notas', notes: 'C C G G A A G- F F E E D D C- G G F F E E D- G G F F E E D- C C G G A A G- F F E E D D C-' },
+  { cat: 'primeiras', id: 'jacques', title: 'Frère Jacques', sub: '6 notas', notes: 'C D E C C D E C E F G- E F G- G. A. G. F. E C G. A. G. F. E C C G C- C G C-' },
+
+  { cat: 'classicas', id: 'alegria', title: 'Ode à Alegria', sub: 'Beethoven · o tema inteiro', notes: 'E E F G G F E D C C D E E+ D. D- E E F G G F E D C C D E D+ C. C- D D E C D E. F. E C D E. F. E D C D G- E E F G G F E D C C D E D+ C. C-' },
+  { cat: 'classicas', id: 'quinta', title: 'Quinta Sinfonia', sub: 'Beethoven · com teclas pretas, teclado maior', notes: 'G. G. G. D#-- F. F. F. D-- G. G. G. D#. G#. G#. G#. G. d#. d#. d#. c--' },
+  { cat: 'classicas', id: 'elise', title: 'Für Elise', sub: 'Beethoven · teclado maior, com duas teclas pretas', notes: 'e d# e d# e B d c A~ C E A B~ E G# B c~ E e d# e d# e B d c A~ C E A B~ E c B A--' },
+  { cat: 'classicas', id: 'serenata', title: 'Pequena Serenata Noturna', sub: 'Mozart · o começo, duas vezes', notes: 'F+ C. F+ C. F. C. F. A. c- A#+ G. A#+ G. A#. G. E. G. C- F+ C. F+ C. F. C. F. A. c- A#+ G. A#+ G. A#. G. E. G. C-' },
+  { cat: 'classicas', id: 'sinfonia40', title: 'Sinfonia nº 40', sub: 'Mozart · o começo, com duas teclas pretas', notes: 'D#. D. D D#. D. D D#. D. D A#- A#. A. G G. F. D# D#. D. C C- D#. D. D D#. D. D D#. D. D A#- A#. A. G G. F. D# D#. D. C C-' },
+  { cat: 'classicas', id: 'turca', title: 'Marcha Turca', sub: 'Mozart · o começo, teclado maior', notes: 'B. A. G#. A. c- d. c. B. c. e- B. A. G#. A. c- d. c. B. c. e-' },
+  { cat: 'classicas', id: 'cisnes', title: 'O Lago dos Cisnes', sub: 'Tchaikovsky · o tema, duas vezes', notes: 'B- E. F#. G. A. B+ G. B+ G. B+ E. G. E. C. G. E-- B- E. F#. G. A. B+ G. B+ G. B+ E. G. E. C. G. E--' },
+  { cat: 'classicas', id: 'flores', title: 'Valsa das Flores', sub: 'Tchaikovsky · O Quebra-Nozes, teclado maior', notes: 'G~ E G c~ c B c d~ A~ F A d~ d c# d e~' },
+
+  { cat: 'natal', id: 'sino', title: 'Bate o sino', sub: 'Jingle Bells · só o refrão, 5 notas', notes: 'E E E- E E E- E G C D E-- F F F F F E E E E D D E D- G- E E E- E E E- E G C D E-- F F F F F E E E G G F D C--' },
+  { cat: 'natal', id: 'sinofull', title: 'Bate o sino completo', sub: 'Jingle Bells · versos e refrão, com uma tecla preta', notes: 'C A G F C~ C. C. C A G F D-- D A# A G E-- c c A# G A-- C A G F C~ C. C. C A G F D-- D A# A G c c c c d c A# G F- c- A A A- A A A- A c F G A-- A# A# A# A# A# A A A. A. A G G A G- c- A A A- A A A- A c F G A-- A# A# A# A# A# A A A. A. c c A# G F--' },
+  { cat: 'natal', id: 'noite', title: 'Noite Feliz', sub: 'A música inteira, com teclas pretas', notes: 'F+ G. F D~ F+ G. F D~ c- c A~ A#- A# F~ G- G A#+ A. G F+ G. F D~ G- G A#+ A. G F+ G. F D~ c- c d#+ c. A A#~ d~ A#+ F. D F+ D#. C A#~' },
+  { cat: 'natal', id: 'joy', title: 'Joy to the World', sub: 'A música inteira', notes: 'c- B+ A. G~ F E- D- C~ G A~ A B~ B c~ c c B A G G+ F. E c c B A G G+ F. E E E E E. F. G~ F. E. D D D D. E. F~ E. D. C c- A G+ F. E F E- D- C--' },
+  { cat: 'natal', id: 'halls', title: 'Deck the Halls', sub: 'Três versos, com uma tecla preta', notes: 'c+ A#. A G F G A F G. A. A#. G. A+ G. F E F- c+ A#. A G F G A F G. A. A#. G. A+ G. F E F- c+ A#. A G F G A F d. d. d. d. c+ A#. A G F-' },
+  { cat: 'natal', id: 'feliznatal', title: 'Desejamos um Feliz Natal', sub: 'A música inteira, com uma tecla preta', notes: 'D G G. A. G. F#. E E E A A. B. A. G. F# D D B B. c. B. A. G E D. D. E A F# G- D G G G F#- F# G F# E D- D B B. c. B. A. G E D. D. E A F# G-' }
+];
+const CATS = [
+  { id: 'primeiras', title: 'Primeiras músicas', c: 'var(--do)', lead: 'Só teclas coloridas, da mais fácil para a mais longa.' },
+  { id: 'classicas', title: 'Clássicas', c: 'var(--la)', lead: 'Beethoven, Mozart e Tchaikovsky em trechos curtos.' },
+  { id: 'natal', title: 'Natal', c: 'var(--fa)', lead: 'Para tocar junto da árvore.' }
+];
+const GAMES = [
+  { id: 'livre', e: '🎹', title: 'Toque livre', sub: 'Sem regras, só som', say: 'O piano é todo seu. Toque o que quiser!', act: { t: 'free', goal: 20 } },
+  { id: 'bichos', e: '🐘', title: 'Quem cantou?', sub: 'Grave ou agudo', say: 'Escute o som e aperte o bicho que cantou.', act: { t: 'animals', rounds: 8 } },
+  { id: 'eco', e: '🦜', title: 'Eco', sub: 'Ouvir e repetir', say: 'O piano toca e você repete igualzinho. As bolinhas mostram as cores.', act: { t: 'echo', pool: ['C', 'D', 'E'], lens: [1, 1, 2, 2, 3] } },
+  { id: 'eco5', e: '🦜', title: 'Eco de cinco notas', sub: 'Depois da aula 8', say: 'O mesmo jogo, agora com cinco notas.', act: { t: 'echo', pool: ['C', 'D', 'E', 'F', 'G'], lens: [1, 2, 2, 3, 3] } },
+  { id: 'tesouro', e: '🔎', title: 'Caça ao tesouro', sub: 'Achar a nota pelo desenho', say: 'Eu mostro o desenho e você acha a tecla.', act: { t: 'hunt', pool: ['C', 'D', 'E', 'F', 'G', 'A', 'B'], rounds: 8 } }
+];
+
+/* ---------- progress ---------- */
+const KEY = 'piano-da-maya-v1';
+let prog = {};
+try { prog = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { prog = {}; }
+function mark(k) { prog[k] = 1; try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch (e) {} }
+const TOTAL = LESSONS.reduce((a, l) => a + l.steps.length, 0) + SONGS.length + GAMES.length;
+const earned = () => Object.keys(prog).length;
+function starSpan(n, total) { const s = el('span', { class: 'stars', 'aria-label': `${n} de ${total} estrelas` }); renderCount(s, n, total); return s; }
+
+/* ---------- celebration ---------- */
+const toast = $('#toast'), fx = $('#fx');
+const PRAISE = ['Muito bem, Maya!', 'Que lindo!', 'Bravo, Maya!', 'Você conseguiu!'];
+function celebrate() {
+  sndCheer();
+  toast.textContent = '⭐ ' + pick(PRAISE);
+  toast.classList.add('on'); setTimeout(() => toast.classList.remove('on'), 1900);
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) confetti();
+}
+function confetti() {
+  const g = fx.getContext('2d'), W = fx.width = innerWidth, H = fx.height = innerHeight;
+  const cols = ['#EF3E36', '#F7892B', '#F7C61C', '#3FB950', '#1FA9D6', '#7557E0', '#EC5BA9'];
+  const ps = Array.from({ length: 90 }, () => ({ x: W / 2 + (Math.random() - .5) * W * .5, y: H * .3, vx: (Math.random() - .5) * 11, vy: -Math.random() * 12 - 3, s: 6 + Math.random() * 8, c: pick(cols), r: Math.random() * 6 }));
+  const t0 = performance.now();
+  (function frame(t) {
+    const k = (t - t0) / 1800;
+    g.clearRect(0, 0, W, H);
+    if (k >= 1) return;
+    g.globalAlpha = 1 - k * k;
+    ps.forEach(p => { p.vy += .42; p.x += p.vx; p.y += p.vy; p.r += .2; g.fillStyle = p.c; g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6); g.restore(); });
+    requestAnimationFrame(frame);
+  })(t0);
+}
+
+/* ---------- views ---------- */
+const view = $('#view'), mainEl = $('#main'), dock = $('#dock');
+const RAINBOW = ['var(--do)', 'var(--re)', 'var(--mi)', 'var(--fa)', 'var(--sol)', 'var(--la)', 'var(--si)'];
+const stepAt = {};
+
+function viewHome() {
+  view.replaceChildren(
+    el('h1', {}, 'Piano da Maya'),
+    el('p', { class: 'lead' }, 'Dez aulas curtas, do primeiro som ao primeiro concerto. Leia a frase amarela em voz alta e a Maya segue a estrela no teclado aqui embaixo.'),
+    el('div', { class: 'tally' }, el('b', {}, '★'), `${earned()} de ${TOTAL} estrelas`),
+    el('div', { class: 'grid' }, LESSONS.map((l, i) =>
+      el('a', { class: 'card', href: '#aula-' + (i + 1) },
+        el('span', { class: 'num', style: `--c:${RAINBOW[i % 7]}` }, i + 1),
+        el('span', { class: 'body' }, el('span', { class: 't' }, l.title), el('span', { class: 's' }, l.sub)),
+        starSpan(l.steps.filter((_, j) => prog[`a${i}-${j}`]).length, l.steps.length)))),
+    el('p', { class: 'lead' }, el('a', { href: '#guia' }, 'Primeira vez? Leia o guia para quem ensina.'))
+  );
+}
+
+function activityView(o) {
+  /* o: back {href,label}, heading node, say, tip, act, key, steps?, footer(nextBtn) */
+  const host = el('div', { class: 'act' });
+  const nodes = [el('a', { class: 'back', href: o.back.href }, '← ' + o.back.label), o.heading];
+  if (o.stepdots) nodes.push(o.stepdots);
+  nodes.push(el('section', { class: 'say' }, el('p', { class: 'eyebrow' }, 'Diga para a Maya'), el('p', { class: 'script' }, o.say), o.tip && el('p', { class: 'tip' }, o.tip)));
+  nodes.push(host);
+  if (o.footer) nodes.push(o.footer);
+  view.replaceChildren(...nodes);
+  startAct(o.act, host, () => { mark(o.key); celebrate(); if (o.onDone) o.onDone(); });
+}
+
+function viewLesson(L, s) {
+  const les = LESSONS[L]; s = Math.max(0, Math.min(s, les.steps.length - 1)); stepAt[L] = s;
+  const st = les.steps[s], last = s === les.steps.length - 1;
+  const go = j => { viewLesson(L, j); mainEl.scrollTop = 0; };
+  const sd = el('div', { class: 'stepdots', role: 'group', 'aria-label': 'Passos da aula' }, les.steps.map((_, j) =>
+    el('button', { class: 'sd' + (j === s ? ' on' : '') + (prog[`a${L}-${j}`] ? ' done' : ''), type: 'button', 'aria-label': 'Passo ' + (j + 1), onclick: () => go(j) }, j + 1)));
+  const next = last
+    ? el('a', { class: 'btn', href: L + 1 < LESSONS.length ? '#aula-' + (L + 2) : '#musicas' }, L + 1 < LESSONS.length ? 'Próxima aula →' : 'Ir para as músicas →')
+    : el('button', { class: 'btn', type: 'button', onclick: () => go(s + 1) }, 'Próximo passo →');
+  const prev = el('button', { class: 'btn ghost', type: 'button', disabled: s === 0, onclick: () => go(s - 1) }, '← Voltar');
+  activityView({
+    back: { href: '#aulas', label: 'Todas as aulas' },
+    heading: el('div', { class: 'ltitle' }, el('span', { class: 'num', style: `--c:${RAINBOW[L % 7]}` }, L + 1), el('h1', {}, les.title)),
+    stepdots: sd, say: st.say, tip: st.tip, act: st.act, key: `a${L}-${s}`,
+    footer: el('div', { class: 'row end' }, prev, next),
+    onDone() { next.classList.add('pulse'); sd.children[s].classList.add('done'); }
+  });
+}
+
+function viewSongs() {
+  const card = sg => el('a', { class: 'card', href: '#musica-' + sg.id },
+    el('span', { class: 'body' }, el('span', { class: 't' }, sg.title), el('span', { class: 's' }, sg.sub),
+      el('span', { class: 'mini', 'aria-hidden': 'true' }, parse(sg.notes).slice(0, 10).map(n => el('i', { style: `--c:${N[n.id].c}` })))),
+    starSpan(prog['m-' + sg.id] ? 1 : 0, 1));
+  view.replaceChildren(
+    el('h1', {}, 'Músicas'),
+    el('p', { class: 'lead' }, 'Escolha uma música: as notas descem até o teclado e esperam a Maya tocar.'),
+    ...CATS.map(c => el('section', { class: 'sec' },
+      el('h2', { style: `--c:${c.c}` }, c.title), el('p', { class: 'lead' }, c.lead),
+      el('div', { class: 'grid' }, SONGS.filter(s => s.cat === c.id).map(card))))
+  );
+}
+function viewSong(sg) {
+  activityView({
+    back: { href: '#musicas', label: 'Todas as músicas' }, heading: el('h1', {}, sg.title),
+    say: 'Olhe as cores descendo! Quando a cor chegar na tecla, toque.',
+    tip: 'A música espera por ela, sem pressa. Ouvir mostra a música inteira; a tartaruga deixa mais devagar.',
+    act: { t: 'roll', notes: sg.notes }, key: 'm-' + sg.id
+  });
+}
+function viewGames() {
+  view.replaceChildren(
+    el('h1', {}, 'Jogos'),
+    el('p', { class: 'lead' }, 'Para os dias sem aula, ou para fechar a sessão com algo que ela já domina.'),
+    el('div', { class: 'grid' }, GAMES.map(gm =>
+      el('a', { class: 'card', href: '#jogo-' + gm.id },
+        el('span', { class: 'big-e', 'aria-hidden': 'true' }, gm.e),
+        el('span', { class: 'body' }, el('span', { class: 't' }, gm.title), el('span', { class: 's' }, gm.sub)),
+        starSpan(prog['j-' + gm.id] ? 1 : 0, 1))))
+  );
+}
+function viewGame(gm) {
+  const again = el('button', { class: 'btn ghost', type: 'button', onclick: () => viewGame(gm) }, '↺ Jogar de novo');
+  activityView({
+    back: { href: '#jogos', label: 'Todos os jogos' }, heading: el('h1', {}, gm.title),
+    say: gm.say, act: gm.act, key: 'j-' + gm.id, footer: el('div', { class: 'row' }, again)
+  });
+}
+function viewGuide() {
+  view.replaceChildren($('#guia-tpl').content.cloneNode(true));
+  $('#legend', view).innerHTML = WHITE.slice(0, 7).map(id => `<span class="chip" style="--c:${N[id].c}"><i></i>${N[id].e} ${N[id].n} do ${N[id].w}</span>`).join('');
+}
+
+function route() {
+  const h = (location.hash || '').slice(1) || 'aulas';
+  stopAct();
+  let tab = 'aulas', m;
+  if ((m = /^aula-(\d+)$/.exec(h)) && LESSONS[m[1] - 1]) { const L = m[1] - 1; viewLesson(L, stepAt[L] || 0); }
+  else if (h === 'musicas') { tab = 'musicas'; viewSongs(); }
+  else if ((m = /^musica-([a-z0-9]+)$/.exec(h)) && SONGS.find(s => s.id === m[1])) { tab = 'musicas'; viewSong(SONGS.find(s => s.id === m[1])); }
+  else if (h === 'jogos') { tab = 'jogos'; viewGames(); }
+  else if ((m = /^jogo-([a-z0-9]+)$/.exec(h)) && GAMES.find(g => g.id === m[1])) { tab = 'jogos'; viewGame(GAMES.find(g => g.id === m[1])); }
+  else if (h === 'guia') { tab = 'guia'; viewGuide(); }
+  else viewHome();
+  dock.hidden = tab === 'guia';
+  document.querySelectorAll('header nav a').forEach(a => {
+    const on = a.dataset.tab === tab; a.classList.toggle('on', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  mainEl.scrollTop = 0;
+}
+
+buildKeys();
+setPrompt(FREE);
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>

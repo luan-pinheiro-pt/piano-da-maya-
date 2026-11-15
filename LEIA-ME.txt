@@ -1,0 +1,17 @@
+PIANO DA MAYA - como instalar no iPad
+
+1) Publique esta pasta em qualquer hospedagem estática com HTTPS
+   (GitHub Pages, Netlify, Cloudflare Pages, Vercel).
+   Todos os arquivos devem ficar juntos, na mesma pasta.
+
+2) No iPad, abra o endereço no SAFARI.
+
+3) Toque em Compartilhar > "Adicionar à Tela de Início" > Adicionar.
+
+4) Abra o app pelo ícone uma vez com internet. Depois disso ele
+   funciona offline, em tela cheia.
+
+Dica: Ajustes > Acessibilidade > Acesso Guiado trava o iPad neste app,
+para a Maya não sair sem querer (triplo clique no botão para ligar).
+
+Sem som? Desligue o modo silencioso e aumente o volume.
