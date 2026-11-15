@@ -275,7 +275,7 @@ kbd{font:800 14px var(--display);background:var(--sky);border-radius:6px;padding
       <h2>Dicas técnicas</h2>
       <ul>
         <li>Use o tablet ou celular deitado, apoiado na mesa. As teclas ficam maiores.</li>
-        <li>Sem som no iPhone ou iPad? Desligue o modo silencioso e aumente o volume.</li>
+        <li>Sem som no iPhone ou iPad? Aumente o volume e toque numa tecla de novo. Se continuar mudo, desligue o modo silencioso (o sino na Central de Controle).</li>
         <li>No computador, as teclas <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> tocam de Dó a Dó.</li>
         <li>As estrelas ficam guardadas só neste aparelho e navegador.</li>
       </ul>
@@ -355,13 +355,32 @@ function audio() {
   }
   return ctx;
 }
+let silentEl = null;
 function unlock() {
+  /* iPhone/iPad: the silent switch mutes Web Audio unless the page is marked as media playback */
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
   const c = audio(); if (!c) return;
+  if (!silentEl && !navigator.audioSession) {
+    /* older iOS: a looping silent <audio> element moves the page to the media channel */
+    try {
+      const n = 4000, buf = new Uint8Array(44 + n), dv = new DataView(buf.buffer);
+      const w = (o, s) => { for (let i = 0; i < s.length; i++) buf[o + i] = s.charCodeAt(i); };
+      w(0, 'RIFF'); dv.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true);
+      dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true);
+      dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); w(36, 'data'); dv.setUint32(40, n, true); buf.fill(128, 44);
+      const a = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+      a.loop = true; a.setAttribute('playsinline', ''); silentEl = a;
+      const pr = a.play(); if (pr && pr.catch) pr.catch(() => { silentEl = null; });
+    } catch (e) { silentEl = null; }
+  }
+  if (c.state !== 'running') {
+    try { const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (e) {}
+  }
   const go = () => { if (pending) { const p = pending; pending = null; p(); } };
   if (c.state === 'running') go();
   else { try { c.resume().then(go).catch(() => {}); } catch (e) {} }
 }
-['pointerup', 'touchend', 'click', 'keydown'].forEach(t => window.addEventListener(t, unlock, { capture: true, passive: true }));
+['pointerup', 'touchend', 'mouseup', 'click', 'keydown'].forEach(t => window.addEventListener(t, unlock, { capture: true, passive: true }));
 
 function tone(midi, o) {
   o = o || {};

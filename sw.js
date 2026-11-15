@@ -1,5 +1,5 @@
 /* Piano da Maya: guarda tudo no aparelho para funcionar sem internet */
-const CACHE = 'piano-da-maya-v7';
+const CACHE = 'piano-da-maya-v8';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
